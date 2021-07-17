@@ -1,0 +1,205 @@
+#+TITLE: Container
+#+AUTHOR: Biel A. P.
+#+DATE: 2021.07.17
+
+* O que é?
+
+  Um /container/ é um pacote de aplicação que funciona de forma isolada dentro
+  do sistema operacional com todas as dependências dentro de si. É uma
+  aplicação auto-contida que funciona da mesma forma independente do ambiente
+  em que ele está.
+
+** SUSE
+
+   /Containers/ são pacotes de software que providenciam o ambiente de execução
+   completo: a aplicação, dependências, bibiliotecas de sistema, configurações
+   e outros binários além dos arquivos de configuração necessários para o
+   funcionamento da aplicação. Aplicações conteinerizadas funcionarão sempre
+   da mesma forma, independente do ambiente.
+
+** RedHat
+
+   /Containers/ Linux são tecnologias que nos permitem empacotar e isolar
+   aplicações com seus ambientes de execução por completo somado a todos os
+   arquivos necessários para funcionar. Desta forma facilitando a movimentação
+   das aplicações conteinerizadas entre ambientes (desenvolvimento, teste,
+   produção, etc.) enquanto mantém o funcionamento completo.
+
+* Tecnologias envolvidas
+
+  Um /container/ é criado com um conjunto de tecnologias do Linux.
+
+** 1979
+
+   A versão 7 do /unix/ criou os fundamentos da tecnologia, ou do isolamento,
+   o =chroot=. O processo isolado do =chroot=, "acha" que o diretório em que
+   ele está isolado, é a raiz do sistema operacional, então para ele, não
+   existe nada além daquilo. Com o tempo caiu em desuso pois um usuário =root=
+   consegue escapar o isolamento facilmente.
+
+** Meados dos anos 80
+
+   Plan 9 combinou vários diretórios em um /union mounting/. Algo presente
+   nas imagens do Docker por exemplo.
+
+** 1986
+
+   Sun Microsystems implementou um sistemas de arquivos baseado em camadas,
+   ou, COW — /Copy On Write/ — chamado /Transluced File Server/ e estava
+   presente no SunOS 3.
+
+** 2000
+
+   FreeBSD 4 apresenta o =jails=, virtualização em nível de SO. Ou seja, assim
+   como no =chroot=, o processo do =jails= fica isolado mas diferente do =chroot=,
+   o =jails= permite o acesso de redes, usuários, etc pode ser feito de forma
+   virtualizada.
+
+** 2001
+
+   O =jails= foi melhorado no Linux com o /Linux VServer/. Sistemas Linux
+   inteiros no mesmo /Kernel/ sem a camada de virtualização.
+
+** 2002
+
+   Surgem os /namespaces/ separando e/ou agrupando recursos do /kernel/. Ou
+   seja, cada processo no mesmo /namespace/ tinha acesso aos mesmos recursos,
+   então, uma rede poderia ser criada para um /namespace/ e outra rede para
+   outro /namespace/ e cada /namespace/ não saberia existe algo além dele
+   no /kernel/.
+
+** 2005
+
+   O /OpenVZ/ adicionou oficialmente as capacidades do /Linux VServer/ no
+   /Kernel/.
+
+** 2006
+
+   Os /cgroups (control groups)/ implementaram isolamento e limite de recursos
+   como =CPU= e =RAM=.
+
+** 2008
+
+   Surge o =LXC= definindo como seriam os /containers/. O =LXC= era tão simples
+   e estável que as tecnologias seguintes usaram ele como núcleo.
+
+** 2011
+
+   Surge o /Wardem/, núcleo do /Cloud Foundry/, seu foco era gerenciar
+   /containers/.
+
+** 2013
+
+   Nasce o /Docker/, neste momento baseado em =LXC= e =libcontainers=.
+
+Nem todas essas tecnologias estão presentes no /Docker/ hoje em dia, muitas
+evoluiram, muitas foram abandonadas.
+
+* Tecnologias Chave
+
+  Essas tecnologias estão presentes em todas as "plataformas" de /containers/.
+
+  - =namespaces=
+    Isolam os processos dos /containers/ e também os pontos de montagem,
+    diretórios, discos, redes, etc.
+
+  - =cgroups=
+    Limitam o acesso a recursos da máquina, como =CPU=, memória e tráfego de
+    rede.
+
+  - =union mounting=
+    É uma característica dos sistemas de arquivos que trabalham com camadas.
+    Estas camadas porem ser compartilhadas. Alguns exemplos são =UnionFS=,
+    =Overlay2=, que é o que o Docker usa, =Device Macro=, =BTRFS= e =ZFS=.
+
+* Imagens
+
+  Dentro das imagens está a aplicação, suas dependências, bibliotecas,
+  binários e arquivos de configuração. É chamado de imagem pois o sistema
+  de arquivos funciona somente em modo leitura, ou seja, não pode ser modificado,
+  assim como uma fotografia: um determinado estado de algo em um determinado
+  instante do tempo.
+
+  Uma imagem auxilia a equipe de desenvolvimento e operaçãoes já que a imagem
+  gerada pelo desenvolvimento, é a mesma imagem a ser distribuida pela
+  operação. Por ser uma imagem, funcionará da mesma forma que funciona no ambiente
+  de desenvolvimento quando for distribuida no ambiente de produção.
+
+  As imagens são criadas baseadas em /containers/, porém, a parte mais interessante
+  não é a imagem por si só, mas sim, a imagem baseada em camadas.
+
+* Vantagens das camadas
+
+  A imagem do servidor Apache, é baseada na imagem do Debian, se eu criasse
+  uma imagem de container pra conter o meu site, eu criaria baseada no Apache
+  que por sua vez é baseada no Debian.
+
+  Uma imagem pode ter 1 ou mais camadas, na maioria das vezes possuem mais de
+  uma. As camadas são de certa forma, independente umas das outras.
+
+   Site --------------------------------------
+    |                                        |
+  Apache -------------------------------- example.com
+    |                                        |
+  Debian -------------------------------------
+
+  O exemplo acima, possui uma camada do Debian, uma camada do Apache e uma
+  camada do site e cada camada está sendo baixada pelo servidor "example.com"
+  para a imagem ser colocada em produção. Passado alguns dias, caso eu crie
+  outra camada de site, baseada no Debian e no Apache e coloque no mesmo
+  servidor, o servidor vai reconhecer que já possui as camadas do Debian
+  e do Apache e só irá baixar a camada do site novo.
+
+* Container x VM
+
+  /Containers/ não são máquinas virtuais, apenas compartilham alguns conceitos
+  e tecnologias semelhantes.
+
+** Máquina Virtual
+
+   É uma máquina física que foi transformada em software que roda dentro de
+   outro sistema. Usada por exemplo para emulação de consoles.
+
+** Maquina hospedeira
+
+   É a máquina que hospeda a máquina virtual e/ou o container e seve como base
+   para outras VMs e Containers. Por exemplo o meu computador ou um servidor.
+   A máquina virtual rodando dentro da máquina hospedeira é chamada de máquina
+   convidada.
+
+** Aplicações em Container
+
+   App A
+   App B
+   App C
+   Container Runtime (Docker)
+   Sistema Operacional (Aperio)
+   Infraestrutura
+
+** Aplicações em VM
+
+   App A (Sistema Operacional)
+   App B (Sistema Operacional)
+   /Hypervisor/ (Virtual Box) ou Sistema Operacional hospedeiro
+   Infraestrutura
+
+Em suma, as máquinas virtuais são sistemas completos enquanto os containers
+apenas inicializa a aplicação e utiliza o hardware da máquina hospedeira.
+
+* Quando utilizar VM
+
+  1. Quando o SO não for Linux, como Unix ou Windows.
+  2. Quando o nível de persistência de dados for maior que os dados da
+     aplicação.
+  3. Quando a arquitetura da aplicação for diferente da máquina hospedeira,
+     por exemplo: VM amd64 e HM arm64.
+  4. Quando a aplicação for muita antiga e migrá-la para /containers/ gerará
+     problemas.
+
+* Quando utilizar Container
+
+  1. Quando a aplicação for voltada para núvem.
+  2. Se a aplicação for um microserviço.
+  3. Para aplicar práticas de Devops e ou CI/CD de forma agressiva.
+  4. Quando o projeto é escalável e pode se espalhar em uma arquitetura
+     de SO em comum.

@@ -1,0 +1,40 @@
+#+TITLE: O sysadmin, o programador e o DBA.
+#+AUTHOR: Biel A. P.
+#+DATE: 2021.07.17
+
+* Administrador de Sistemas
+
+  O papel é trabalhar diretamente com os orquestradores de /containers/ como
+  Kubernetes ou Swarm e também trabalhar e operar em máquinas que têm
+  /containers/ avulsos.
+
+** Necessário
+
+   - Criar containers.
+   - Entender como eles se comunicam através da rede.
+   - Levantar infraestrutura de testes e conhecer volumes.
+   - Coletar métricas e monitorar aplicações.
+   - Propor melhores práticas de comunicação e persistência.
+   - Impor limites de recursos.
+
+* Programador
+
+  Trabalha principalmente criando e testando imagens. São os que utilizarão
+  praticamente toda a gama de subcomandos do Docker.
+
+** Necessário
+
+   - Levantar infraestrutura local.
+   - Entender e lidar com volumes distribuídos e cache.
+
+* Administrador de Banco de Dados
+
+  Utilizam Operators de bancos de dados, eles facilitam algumas tarefas
+  importantes como backups, réplicas e alta disponibilidade.
+
+** Necessário
+
+   - Lidar com containers.
+   - Entender como imagens funcionam.
+   - Levantar infraestrutura de testes.
+   - Auxiliar os times para rodar o banco em estreitas e containers.

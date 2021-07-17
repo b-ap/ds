@@ -1,0 +1,54 @@
+#+TITLE: Microsserviços
+#+AUTHOR: Biel A. P.
+#+DATE: 2021.07.17
+
+* Arquitetura Monolítica
+
+  Um Monolíto em TI, é um programa composto de um único grande pedaço, quase
+  sempre em uma única linguagem.
+
+** Vantagens
+
+   - Mais fácil de desenvolver.
+   - Mais fácil de testar.
+   - Mais fácil de provisionar.
+
+** Desvantagens
+
+   - Uma mínima alteração exige teste em todo o pacote, recompilação e
+     reprovisonamento completo.
+   - Se uma pequena parte da aplicação precisar de mais performance sem
+     modificações no código, teremos que escalar a aplicação por completo.
+
+* SOAP
+
+  /Simple Object Access Protocol/ é um protocolo de troca de informações
+  baseado em =XML= utilizando =RPC= ou =HTTP=.
+
+* SOA
+
+  /Service Oriented Architecture/ é um padrão de arquitetura onde as funcionalidades
+  são disponibilizadas na forma de serviços, geralmente distribuidos.
+
+* ESB
+
+  /Enterprise Service Bus/ implementa a comunicação entre aplicações que integram
+  entre sí no SOA. É responsável por interpretar e traduzir mensagens em
+  aplicações.
+
+* SPOF
+
+  O ESB se tornou um /Single Point Of Failure/, pontos ou pedaços da aplicação
+  que não possuem outra réplica ou alguma forma de se sobrepor as falhas.
+
+* Microserviços
+
+  Os microsserviços são uma variação do SOA sem o ESB, a comunicação é direta
+  e padronizada. Ou seja as aplicações se comunicam diretamente entre si.
+
+** Vantagens
+
+   - Aplicações mais resilientes, sem o gargalo ou SPOF do ESB.
+   - Fraca acoplação.
+   - Componentes de diferentes tecnologias.
+   - Fácil escalabilidade por serem independentes.

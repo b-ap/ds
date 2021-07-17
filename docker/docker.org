@@ -1,0 +1,226 @@
+#+TITLE: Docker — Teoria
+#+AUTHOR: Biel A. P.
+#+DATE: 2021.07.17
+
+* O que é?
+
+  Docker é uma plataforma de código aberto que utiliza virtualização em nível
+  de sistema operacional para criar e gerenciar /containers/.
+
+** Diferencial
+
+   A facilidade de empacotar e compartilhar aplicações através da internet.
+
+* Como funciona?
+
+** Imagens e Containers
+
+   Através de uma imagem, é possível criar um número qualquer de containers.
+   Dentro do container há um pequeno sistema operacional que compartilha o
+   kernel, configurações, binários, dependências, com a máquina hosperdeira.
+
+** namespaces
+
+   Os processos dentro do container são isolados dos da máquina hospedeira.
+   Ou seja, os processos do container podem ser vistos na máquina hospedeira
+   mas os processos da máquina hospedeira não podem ser vistos no container.
+
+   Além disso, o container tem o processo principal — PID 1 — caso esse
+   processo termine, o container se desconecta automáticamente.
+
+   A rede, por padrão, também é isolada. O container tem sua própria interface
+   de rede. A rede do container pode ser vista na máquina hospedeira, porém
+   a rede da máquina hospedeira não pode ser vista no container.
+
+** chroot
+
+   A raíz do container está dentro da máquina hospedeira, porém com =chroot=.
+
+   #+BEGIN_SRC
+Container
+
+/ # ls /
+
+bin   etc         initrd.img.old  lib64       media  proc  sbin  tmp  vmlinuz
+boot  home        lib             file        mnt    root  srv   usr  vmlinuz.old
+dev   initrd.img  lib32           lost+found  opt    run   sys   var
+   #+END_SRC
+
+   #+BEGIN_SRC
+Máquina Hospedeira
+
+biel:~ $ LAYER=a3ujaknd21310-qw9eqwlasc
+biel:~ $ ls /var/lib/docker/overlay2/$LAYER/diff
+biel:~ $ file (raíz do container) 
+   #+END_SRC
+
+** Camadas
+
+   Quando criamos um container, uma pequena camada — conhecida como
+   Write Table Layer — é adicionada ao topo
+   da pilha de camadas, todos os arquivos que o container alterar ou criar
+   ficarão ali. Essa camada é temporária, só existirá enquanto o container
+   existir.
+
+*** COW — Copy On Write
+
+    Debian com 2 arquivos -> Criação de container (c1 leitura/escrita).
+
+    Ao criar o container, a Writable Layer é criada e os dois arquivos que
+    estavam no Debian também são referenciados no c1 porém não são adicionados
+    na WL.
+
+    Debian com 2 arquivos -> Criação de container (c2 leitura/escrita).
+
+    Ao criar o container, a Writable Layer é criada e os dois arquivos que
+    estavam no Debian e no c1 também são referenciados no c2, porém não vão para
+    a WL.
+
+    Adição de arquivo na WL do c1 e Adição de outro arquivo na WL do c2.
+
+    Quando necessário, ler um arquivo na WL, a leitura de arquivos para na WL.
+    Porém, quando necessário ler um arquivo fora da WL, em camadas inferiores,
+    por exemplo, os arquivos no Debian, o SO "atravessa" a WL e busca o arquivo
+    requisitado. Caso uma edição seja necessária, o Docker copia o arquivo para
+    a WL, assim, permitindo escrita. O arquivo original fica inalterado pois
+    as camadas fora da WL são apenas para leitura.
+
+A aplicação enxerga as camadas como uma coisa só. A leitura de arquivos
+acontece de cima para baixo, começando a partir da WL e indo até a última
+camada.
+
+* Caso de uso — Container avulso.
+
+** Por que rodar um container na máquina se eu posso simplesmente instalar a aplicação diretamente?
+
+   Vamos supor que temos uma aplicação legada, usando =MySql 5.5= e =Debian 8=
+   e fomos obrigados à atualizar os sistemas por questões de segurança.
+   Nesse caso, atualizamos para o Debian 10. Porém, o Debian 10, suporta apenas
+   o =MariaDB 10.3= e o =MySql 5.6= e trocar o banco de dados ainda não é uma opção.
+
+   Nesse caso, a melhor opção é colocar o banco de dados dentro de um container que possua
+   o =MySql 5.5=.
+
+* Caso de uso — Tráfego.
+
+** Custo do tráfego de rede e por que utilizar imagens menores.
+
+   Vamos supor que temos um ambiente Kubernetes Multi-Cloud, como é uma núvem, o tráfego que entra e sai é cobrado.
+   Ou seja, é necessário diminuir o máximo possível o custo de upload e download.
+   O Kubernetes por padrão sempre baixa a imagem a cada nova réplica. As implantações tem alta frequência.
+
+   Nesse caso o recomendado é utilizar imagens pequenas como por exemplo, o Alpine.
+   Além de sair mais barato, tem um espaço para vulnerabilidades menor pois têm menos
+   programas, além disso, a ferramenta de CI também vai baixar a imagem e subi-la para
+   a núvem, então, quanto menor for a imagem, mais barato vai sair.
+
+* Imagens e Tags
+
+  Imagens são como um disco e permitem apenas leitura.
+
+  Tags são variações da imagem do sistema ou da aplicação.
+  Por exemplo a versão anterior de uma aplicação.
+
+  =# docker image pull image:tag=
+  =# docker image pull debian:buster-slim=
+
+* Volumes
+
+  Volume é o lugar onde os dados criados pelo container
+  são armazenados. Ele é utilizado caso existam dados
+  que precisam persistir além do ciclo de vida do container.
+
+  =# docker container run --detach --name apache --volume /home/biel/proj/fun/cf/website/:/usr/local/apache2/htdocs httpd:alpine=
+
+  Também podemos utilizar um outro container porém com o mesmo volume.
+
+  =# docker container run --detach --name nginx --volume /home/biel/proj/fun/cf/website/:/usr/share/nginx/html --publish 81:80 nginx:alpine=
+
+  =# curl localhost= na máquina local, bate no Apache por padrão.
+
+  =# curl localhost:81= na máquina local, bate no NGINX por padrão.
+
+** Versões conflitantes
+
+   Suponha que um programa escrito em =Python 2= está sendo reescrito em =Python 3=.
+   Durante algum tempo, esses programas irão co-existir até a versão do Python 3 ficar estável
+   e então a versão do Python 2 será desligada. É importante testar a aplicação nas 2 versões,
+   então, a melhor maneira de fazer isso, é criando um volume rodando =Python 2= e um volume rodando
+   =Python 3=, pois, é possível alterar o código apenas 1 vez e visualizar as alterações nos dois volumes.
+
+* Exposição
+
+  Abre uma porta na máquina e toda requisição que chega nessa porta é redirecionada para o container.
+
+  =# docker container run --detach --name apache --volume /home/biel/proj/fun/cf/website/:/usr/local/apache2/htdocs --publish 80:80 httpd:alpine=
+
+* Variáveis de Ambiente
+
+  São variáveis que ficam distribuidas pelo sistema, podem ser utilizadas para especificar diretórios, usuários, tokens, etc.
+
+  A maior parte dos containers que utilizam variáveis de ambiente são containers de banco de dados.
+
+  Nesse caso, vamos usar o =MariaDB=, um cliente do =MySQL=. Temos que especificar 4 variáveis de ambiente,
+  =MYSQL_ROOT_PASSWORD=, =MYSQL_USER=, =MYSQL_PASSWORD= e =MYSQL_DATABASE=.
+
+  =# docker run --detach --name mariadb --env MYSQL_ROOT_PASSWORD=1234 -e MYSQL_USER=biel -e MYSQL_PASSWORD=1234 -e MYSQL_DATABASE=container mariadb=
+
+  =# docker container logs -f mariadb=
+
+  Para mostrar o que o container está fazendo em segundo plano.
+
+  A maioria dos containers de Bancos usam um /Entrypoint/, o /Entrypoint/ possibilita a execução de scripts que recebe por exemplo variáveis de ambiente antes do banco de dados inciar.
+  =# docker container exec -ti mariadb bash=
+  =root@containerdb:/# mysql -u biel -p1234 container=
+
+  Para criar um container de banco de dados com um volume criado e gerenciado pelo docker, o caminho absoluto do diretório não é necessário.
+  =# docker run --detach --name mariadb --env MYSQL_ROOT_PASSWORD=1234 -e MYSQL_USER=biel -e MYSQL_PASSWORD=1234 -e MYSQL_DATABASE=container --volume dados:/var/lib/mysql mariadb=.
+
+  Para listar volumes
+  =# docker volume ls=
+
+  Para criar volumes mais complexos
+  =# docker volume create ...=
+
+* Criação de imagem
+
+  1. Dockerfile
+  2. =# docker image build --tag [nome da imagem] [diretório base]=
+  3. Criação do container baseado na imagem é igual ao qualquer outra criação de container.
+
+* Publicação de imagem
+
+  1. =# docker login=
+  2. =# docker image tag [nome-da-imagem] [nome-de-usuario/nome-da-imagem]=
+  3. =# docker image push [nome-de-usuario/imagem]=
+
+* Docker Compose YAML
+
+  Na imagem anterior, precisamos passar algumas variáveis de ambiente, e fica chato fazer isso toda vez, então, podemos utilizar /Docker Compose YAML/.
+
+  1. docker-compose.yml
+  2. docker-compose up
+  
+docker container run [nome do seu container] [nome da imagem]
+
+docker container start [nome do container] não trava o terminal no processo.
+
+containers encerrados podem ser inicializados novamente.
+
+A máscara da rede do Docker é =#172.17.0.0/16=.
+Ou seja os IPs dos containers vão de =172.17.0.2= até
+=172.17.0.254=. O =.0.1= é sempre a máquina hospedeira.
+
+Para ver o IP do container, use
+
+=# docker container inspect [nome do container]=
+
+Para entrar no container
+
+=# docker container exec [nome container] [comando]=
+=# docker container exec --tty --interactive apache bash=
+
+Ctrl + p + q sai do container sem encerrá-lo.
+
+=# docker container run --detach httpd=
+Não prende o usuário no processo
