@@ -1,0 +1,22 @@
+version: '3.0'
+services:
+    app:
+        image: flask
+        environment:
+        - DB_HOST=db
+        - DB_USER=biel
+        - DB_PASS=1234
+        - DB_NAME=container
+        ports:
+        - 5000:5000
+    db:
+        image: mariadb
+        environment:
+        - MYSQL_ROOT_PASSWORD=1234
+        - MYSQL_USER=biel
+        - MYSQL_PASSWORD=1234
+        - MYSQL_DATABASE=container
+        volumes:
+        - data:/var/lib/mysql
+volumes:
+    data: {}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Docker Study</title>
+    <style>
+      body {
+          background: #fff;
+          font: 16px sans-serif, sans-serif;
+          width: 50%;
+          margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div>
+        <h2>Users</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr class="{% if loop.index % 2 == 0 %} {% endif %}">
+              <td>{{ u.id }}</td>
+              <td>{{ u.name }}</td>
+              <td>{{ u.email }}</td>
+            </tr>
+            {% endfor %}
+            {% if not users %}
+            <tr>
+              <td colspan="3">Refresh the page to add users to the table.</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
